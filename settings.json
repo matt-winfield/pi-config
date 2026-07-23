@@ -2,12 +2,15 @@
   "lastChangelogVersion": "0.81.1",
   "theme": "dark",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-sol",
-  "defaultThinkingLevel": "high",
+  "defaultModel": "gpt-5.6-luna",
+  "defaultThinkingLevel": "max",
   "packages": [
     "npm:pi-web-access@0.13.0",
     "git:github.com/DietrichGebert/ponytail@16f29800fd2681bdf24f3eb4ccffe38be3baec6b",
     "git:github.com/Jabbslad/pi-worktree@52059f75c3c9378b87fe440e2f50fd2caddc0869",
-    "git:github.com/Jabbslad/pi-team-agents@855fd1e945460001a49c2aac2aa034eb6e998310"
+    "npm:@petechu/pi-extension-toggle@0.1.3"
+  ],
+  "extensions": [
+    "+extensions/guardian/index.ts"
   ]
 }
