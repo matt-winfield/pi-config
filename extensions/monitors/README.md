@@ -19,5 +19,5 @@ A script should print concise context only when the agent can act. Keep baseline
 Run the focused tests with:
 
 ```bash
-pnpm exec vitest run --config extensions/monitors/vitest.config.ts
+pnpm exec vitest run --config .pi/extensions/monitors/vitest.config.ts
 ```
