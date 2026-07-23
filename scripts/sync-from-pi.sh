@@ -101,7 +101,13 @@ def copy_json(name, reject_secrets=False):
     if name == "settings.json":
         data = dict(data)
         if "packages" in data:
-            data["packages"] = [pin_package(package) for package in data["packages"]]
+            data["packages"] = [
+                pin_package(package)
+                for package in data["packages"]
+                if not str(
+                    package.get("source") if isinstance(package, dict) else package
+                ).startswith("git:github.com/matt-winfield/pi-config@")
+            ]
     target.write_text(json.dumps(data, indent=2) + "\n")
     shutil.copystat(source, target, follow_symlinks=True)
 

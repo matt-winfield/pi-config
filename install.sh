@@ -24,7 +24,8 @@ const file = `${dir}/settings.json`;
 const settings = JSON.parse(fs.readFileSync(file, "utf8"));
 const packages = settings.packages ?? [];
 const packageSource = (pkg) => typeof pkg === "string" ? pkg : pkg.source;
-settings.packages = [source, ...packages.filter((pkg) => packageSource(pkg) !== source)];
+const isConfigPackage = (pkg) => packageSource(pkg)?.startsWith("git:github.com/matt-winfield/pi-config@");
+settings.packages = [source, ...packages.filter((pkg) => !isConfigPackage(pkg))];
 fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");
 
 for (const pkg of settings.packages.slice(1)) {
