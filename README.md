@@ -7,48 +7,13 @@ This repository is also a pi package. The package resources live in the conventi
 
 ## Install on a new machine
 
-Install pi first, then copy the tracked user settings into pi's global
-configuration directory:
-
 ```bash
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+curl -fsSL https://pi.dev/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/matt-winfield/pi-config/main/install.sh | sh
 ```
 
-```bash
-PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-mkdir -p "$PI_DIR"
-cp settings.json "$PI_DIR/settings.json"
-[ ! -f keybindings.json ] || cp keybindings.json "$PI_DIR/keybindings.json"
-[ ! -f models.json ] || cp models.json "$PI_DIR/models.json"
-```
-
-Install this repository as a pi package and install the package snapshot recorded in
-`settings.json`:
-
-```bash
-pi install git:github.com/matt-winfield/pi-config@main
-```
-
-The config package must be installed after copying `settings.json`: `pi install` records
-it in the global package list.
-
-
-Install every package listed in the snapshot. `pi install` is safe to rerun:
-
-```bash
-python3 - <<'PY'
-import json
-import subprocess
-
-for package in json.load(open("settings.json")).get("packages", []):
-    source = package["source"] if isinstance(package, dict) else package
-    subprocess.run(["pi", "install", source], check=True)
-PY
-```
-
-For an exact checkout, replace `main` with a commit hash or immutable tag. Authenticate
-separately with `/login` or environment variables; credentials and sessions are not
-stored here.
+The second command installs this package, applies the saved settings, and installs its
+pinned packages. Start pi and run `/login` to authenticate.
 
 ## Update this repository from the current pi installation
 
