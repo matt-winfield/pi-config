@@ -7,15 +7,12 @@ This repository is also a pi package. The package resources live in the conventi
 
 ## Install on a new machine
 
-Install pi first, then install this repository and the package snapshot recorded in
-`settings.json`:
+Install pi first, then copy the tracked user settings into pi's global
+configuration directory:
 
 ```bash
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-pi install git:github.com/matt-winfield/pi-config@main
 ```
-
-Copy the tracked user settings into pi's global configuration directory:
 
 ```bash
 PI_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
@@ -24,6 +21,17 @@ cp settings.json "$PI_DIR/settings.json"
 [ ! -f keybindings.json ] || cp keybindings.json "$PI_DIR/keybindings.json"
 [ ! -f models.json ] || cp models.json "$PI_DIR/models.json"
 ```
+
+Install this repository as a pi package and install the package snapshot recorded in
+`settings.json`:
+
+```bash
+pi install git:github.com/matt-winfield/pi-config@main
+```
+
+The config package must be installed after copying `settings.json`: `pi install` records
+it in the global package list.
+
 
 Install every package listed in the snapshot. `pi install` is safe to rerun:
 
