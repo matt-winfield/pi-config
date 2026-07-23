@@ -7,6 +7,10 @@ export type PolicyDecision = "allow" | "review";
 
 const SENSITIVE_NAMES = new Set([".git-credentials", ".netrc", ".npmrc", ".pypirc"]);
 const SENSITIVE_DIRECTORIES = new Set([".agents", ".aws", ".gnupg", ".pi", ".ssh"]);
+const CONFIGURED_SKILL_DIRECTORIES = [
+  resolve(homedir(), ".pi", "agent", "skills"),
+  resolve(homedir(), ".agents", "skills"),
+];
 
 function isWithin(root: string, path: string): boolean {
   const relativePath = relative(resolve(root), resolve(path));
@@ -87,9 +91,15 @@ export function fileOperationForVfs(context: {
 export function classifyFileAccess(
   workspace: string,
   path: string,
-  _operation: FileOperation,
+  operation: FileOperation,
 ): PolicyDecision {
   const absolutePath = resolve(path);
+  if (
+    operation === "read" &&
+    CONFIGURED_SKILL_DIRECTORIES.some((root) => isWithin(root, absolutePath))
+  ) {
+    return "allow";
+  }
   const name = basename(absolutePath);
   const segments = absolutePath.split(sep);
   if (

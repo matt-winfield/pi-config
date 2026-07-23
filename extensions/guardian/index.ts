@@ -294,7 +294,7 @@ export default function guardianExtension(pi: ExtensionAPI): void {
     ctx: ExtensionContext,
   ): Promise<GuardianConfig> {
     await configReady;
-    config = { ...config, ...patch };
+    Object.assign(config, patch);
     await saveGuardianConfig(config);
     pi.appendEntry("guardian-config", {
       ...config,

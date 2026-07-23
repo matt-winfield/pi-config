@@ -33,7 +33,9 @@ Normal workspace file reads and writes do not require a review in protected
 modes. Guardian reviews:
 
 - sensitive paths, including credentials, private keys, `.env` files, `.ssh`,
-  `.aws`, `.pi`, and similar directories;
+  `.aws`, `.pi`, and similar directories; reads from Pi's configured global
+  skill roots (`~/.pi/agent/skills` and `~/.agents/skills`) are read-only
+  allowlisted so skill instructions can load without approval;
 - reads, writes, and deletes outside the workspace;
 - every outbound HTTP/HTTPS request; and
 - tools that are not routed through Gondolin.
