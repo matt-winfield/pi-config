@@ -5,19 +5,45 @@ import { isWriteFlag } from "@earendil-works/gondolin";
 export type FileOperation = "read" | "write" | "delete";
 export type PolicyDecision = "allow" | "review";
 
-const SENSITIVE_NAMES = new Set([".git-credentials", ".netrc", ".npmrc", ".pypirc"]);
-const SENSITIVE_DIRECTORIES = new Set([".agents", ".aws", ".gnupg", ".pi", ".ssh"]);
-const CONFIGURED_SKILL_DIRECTORIES = [
-  resolve(homedir(), ".pi", "agent", "skills"),
-  resolve(homedir(), ".agents", "skills"),
+const SENSITIVE_NAMES = new Set([
+  ".git-credentials",
+  ".netrc",
+  ".npmrc",
+  ".pypirc",
+]);
+const SENSITIVE_DIRECTORIES = new Set([
+  ".agents",
+  ".aws",
+  ".gnupg",
+  ".pi",
+  ".ssh",
+]);
+const SKILL_CONTAINERS = [
+  resolve(homedir(), ".pi", "agent"),
+  resolve(homedir(), ".agents"),
 ];
+
+function isConfiguredSkillPath(path: string): boolean {
+  return SKILL_CONTAINERS.some((container) => {
+    const relativePath = relative(resolve(container), resolve(path));
+    if (relativePath.startsWith("..") || isAbsolute(relativePath)) return false;
+    return relativePath.split(sep).includes("skills");
+  });
+}
 
 function isWithin(root: string, path: string): boolean {
   const relativePath = relative(resolve(root), resolve(path));
-  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
+  return (
+    relativePath === "" ||
+    (!relativePath.startsWith("..") && !isAbsolute(relativePath))
+  );
 }
 
-export function agentPathToGuest(workspace: string, input: string, home = homedir()): string {
+export function agentPathToGuest(
+  workspace: string,
+  input: string,
+  home = homedir()
+): string {
   const path = input.trim().replace(/^@/, "");
   if (
     path === "/workspace" ||
@@ -27,8 +53,12 @@ export function agentPathToGuest(workspace: string, input: string, home = homedi
   ) {
     return path;
   }
-  const expanded = path === "~" || path.startsWith("~/") ? resolve(home, path.slice(2)) : path;
-  return hostPathToGuest(workspace, isAbsolute(expanded) ? expanded : resolve(workspace, expanded));
+  const expanded =
+    path === "~" || path.startsWith("~/") ? resolve(home, path.slice(2)) : path;
+  return hostPathToGuest(
+    workspace,
+    isAbsolute(expanded) ? expanded : resolve(workspace, expanded)
+  );
 }
 
 export function hostPathToGuest(workspace: string, path: string): string {
@@ -36,13 +66,19 @@ export function hostPathToGuest(workspace: string, path: string): string {
   if (isWithin(workspace, absolutePath)) {
     return posix.join(
       "/workspace",
-      relative(resolve(workspace), absolutePath).split(sep).join(posix.sep),
+      relative(resolve(workspace), absolutePath).split(sep).join(posix.sep)
     );
   }
-  return posix.join("/host", absolutePath.split(sep).filter(Boolean).join(posix.sep));
+  return posix.join(
+    "/host",
+    absolutePath.split(sep).filter(Boolean).join(posix.sep)
+  );
 }
 
-export function guestPathToHost(workspace: string, guestPath: string): string | undefined {
+export function guestPathToHost(
+  workspace: string,
+  guestPath: string
+): string | undefined {
   const path = guestPath.startsWith("/data/") ? guestPath.slice(5) : guestPath;
   if (path === "/workspace" || path.startsWith("/workspace/")) {
     return resolve(workspace, `.${path.slice("/workspace".length)}`);
@@ -81,7 +117,9 @@ export function fileOperationForVfs(context: {
   if (
     context.op === "open" &&
     context.flags !== undefined &&
-    (typeof context.flags === "number" ? (context.flags & 3) !== 0 : isWriteFlag(context.flags))
+    (typeof context.flags === "number"
+      ? (context.flags & 3) !== 0
+      : isWriteFlag(context.flags))
   ) {
     return "write";
   }
@@ -91,19 +129,17 @@ export function fileOperationForVfs(context: {
 export function classifyFileAccess(
   workspace: string,
   path: string,
-  operation: FileOperation,
+  operation: FileOperation
 ): PolicyDecision {
   const absolutePath = resolve(path);
-  if (
-    operation === "read" &&
-    CONFIGURED_SKILL_DIRECTORIES.some((root) => isWithin(root, absolutePath))
-  ) {
+  if (operation === "read" && isConfiguredSkillPath(absolutePath)) {
     return "allow";
   }
   const name = basename(absolutePath);
   const segments = absolutePath.split(sep);
   if (
-    ((name === ".env" || name.startsWith(".env.")) && !name.endsWith(".example")) ||
+    ((name === ".env" || name.startsWith(".env.")) &&
+      !name.endsWith(".example")) ||
     name.endsWith(".key") ||
     name.endsWith(".pem") ||
     SENSITIVE_NAMES.has(name) ||

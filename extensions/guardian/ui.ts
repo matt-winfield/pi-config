@@ -1,7 +1,9 @@
 import type { GuardianConfig, GuardianMode } from "./config";
 import type { ReviewAction, ReviewVerdict } from "./reviewer";
 
-export function formatGuardianStatus(config: Pick<GuardianConfig, "mode">): string {
+export function formatGuardianStatus(
+  config: Pick<GuardianConfig, "mode">
+): string {
   return `Guardian: ${config.mode}`;
 }
 
@@ -15,16 +17,34 @@ export function formatReviewPrompt(action: ReviewAction): string {
 export function formatReviewNotification(
   action: ReviewAction,
   verdict: ReviewVerdict,
-  mode: GuardianMode = "auto-approve",
+  mode: GuardianMode = "auto-approve"
 ): string {
   return [
     `${mode === "prompt" ? "Manual approval" : "Automatic approval review"} ${verdict.outcome === "allow" ? "approved" : "denied"}`,
     `Action: ${action.kind} ${action.operation} ${action.target}`,
-    ...(action.kind === "tool" && ["bash", "host-bash"].includes(action.operation) && action.details
+    ...(action.kind === "tool" &&
+    ["bash", "host-bash"].includes(action.operation) &&
+    action.details
       ? [`Command: ${action.details}`]
       : []),
+    ...(verdict.approvalPattern ? [`Pattern: ${verdict.approvalPattern}`] : []),
     `Risk: ${verdict.riskLevel}; authorization: ${verdict.userAuthorization}`,
     `Reason: ${verdict.rationale}`,
+  ].join("\n");
+}
+
+export function formatApprovalPatternNotification(
+  action: ReviewAction,
+  pattern: string,
+  verdict: ReviewVerdict,
+  mode: GuardianMode = "auto-approve"
+): string {
+  return [
+    `${mode === "prompt" ? "Manual approval" : "Automatic approval pattern"} matched`,
+    `Action: ${action.kind} ${action.operation} ${action.target}`,
+    `Pattern: ${pattern}`,
+    `Risk: ${verdict.riskLevel}; authorization: ${verdict.userAuthorization}`,
+    `Reason: Previously approved by Guardian: ${verdict.rationale}`,
   ].join("\n");
 }
 

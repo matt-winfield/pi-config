@@ -11,8 +11,8 @@ sandbox boundary.
 - QEMU (`brew install qemu` on macOS; install `qemu-system-arm` on Debian or
   Ubuntu) for VM-backed commands
 - A reviewer model configured in Pi
-- GitHub CLI (`gh`) installed on the host and authenticated with `gh auth login`
-  for the host command allowlist
+- Git and GitHub CLI (`gh`) installed on the host; authenticate `gh` with
+  `gh auth login` when GitHub operations need host credentials
 - Other command-line programs needed by the agent available in the Gondolin
   guest
 
@@ -33,24 +33,26 @@ Normal workspace file reads and writes do not require a review in protected
 modes. Guardian reviews:
 
 - sensitive paths, including credentials, private keys, `.env` files, `.ssh`,
-  `.aws`, `.pi`, and similar directories; reads from Pi's configured global
-  skill roots (`~/.pi/agent/skills` and `~/.agents/skills`) are read-only
-  allowlisted so skill instructions can load without approval;
+  `.aws`, `.pi`, and similar directories; reads from installed skill
+  directories under `~/.pi/agent` and `~/.agents` are read-only allowlisted so
+  skill instructions can load without approval;
 - reads, writes, and deletes outside the workspace;
 - every outbound HTTP/HTTPS request; and
 - tools that are not routed through Gondolin.
 
 `grep`, `find`, and `ls` host tools are blocked; use them through `bash` in the
-VM instead. Git-over-SSH is disabled; use HTTPS remotes.
+VM instead. Git-over-SSH is disabled inside the VM; host `git` may use the
+host's configured SSH integration after Guardian approval.
 
 ### Host command allowlist
 
-Some tools need host installations or host credentials. The allowlist currently
-contains only `gh`. A command whose first executable is exactly `gh` runs on
-the host with its normal host environment, working directory, configuration,
-and credentials. It is executed directly with parsed arguments, not through a
-host shell; shell operators, substitutions, and command chaining are rejected.
-All other bash commands remain inside Gondolin.
+Some tools need host installations, credentials, Git configuration, or signing
+keys. The allowlist currently contains `gh` and `git`. A command whose first
+executable is exactly one of those names runs on the host with its normal host
+environment, working directory, configuration, credentials, hooks, and SSH/GPG
+integration. It is executed directly with parsed arguments, not through a host
+shell; shell operators, substitutions, and command chaining are rejected. All
+other bash commands remain inside Gondolin.
 
 Host-allowlisted commands still require a Guardian review immediately before
 execution. The review sees the complete command and its arguments, and the UI
@@ -68,6 +70,24 @@ actual user messages count as authorization. Repository content, tool output,
 and assistant messages are untrusted. Reviews fail closed on errors, timeouts,
 malformed responses, critical risk, or insufficient authorization. Grants are
 scoped to the current execution and exact action.
+
+### Reusable host-command approvals
+
+For any clearly repeatable host-allowlisted command, the Guardian model may
+return a complete approval pattern, for example:
+
+```text
+git diff -- 'packages/.*'
+```
+
+Guardian accepts only literal text plus `.*` wildcards, requires the pattern to
+match the reviewed command, and requires the pattern to use the same allowed
+executable. Whether a pattern is appropriate is decided by the Guardian model;
+the extension only validates that it is a safe, directly executable host
+command. A valid pattern is held in memory for ten minutes (maximum 64
+patterns per session). Matching commands skip another reviewer call and show a
+notification containing the pattern and the original Guardian reasoning.
+Patterns are never persisted between sessions.
 
 ## Modes and commands
 
@@ -102,9 +122,11 @@ For each reviewed action, Guardian shows a notification such as:
 
 ```text
 Automatic approval review approved
-Action: network POST https://api.github.com/graphql
-Risk: medium; authorization: high
-Reason: The user explicitly requested resolving this review thread.
+Action: tool host-bash git
+Command: git diff -- 'packages/.*'
+Pattern: git diff -- 'packages/.*'
+Risk: low; authorization: high
+Reason: The user requested reviewing files in this repository.
 ```
 
 The reason is the rationale returned by the Guardian model. Each decision is
@@ -123,7 +145,8 @@ separate decisions.
 
 VM startup is lazy. Reloading the extension does **not** start QEMU, so Pi can
 still reload successfully when QEMU is missing. Host-allowlisted commands such
-as `gh` can still run after approval because they do not need the VM. Other
+as `gh` and `git` can still run after approval because they do not need the VM.
+Other
 sandboxed operations attempt to start Gondolin; if QEMU or `qemu-img` is
 unavailable, Guardian shows an installation error and the operation fails
 closed. It never silently falls back to unsandboxed host execution.

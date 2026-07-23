@@ -1,9 +1,23 @@
-const SHELL_OPERATORS = new Set([";", "&", "|", "<", ">", "`", "$", "(", ")", "\n", "\r"]);
+const SHELL_OPERATORS = new Set([
+  ";",
+  "&",
+  "|",
+  "<",
+  ">",
+  "`",
+  "$",
+  "(",
+  ")",
+  "\n",
+  "\r",
+]);
 
-export const HOST_BASH_ALLOWLIST = new Set(["gh"] as const);
+export const HOST_BASH_ALLOWLIST = new Set(["gh", "git"] as const);
+
+export type HostExecutable = "gh" | "git";
 
 export interface HostCommand {
-  executable: "gh";
+  executable: HostExecutable;
   args: string[];
 }
 
@@ -53,6 +67,7 @@ export function parseHostCommand(command: string): HostCommand | undefined {
   if (quote || escaped) return undefined;
   if (started) tokens.push(token);
   const executable = tokens[0];
-  if (!executable || !HOST_BASH_ALLOWLIST.has(executable as "gh")) return undefined;
-  return { executable: "gh", args: tokens.slice(1) };
+  if (!executable || !HOST_BASH_ALLOWLIST.has(executable as HostExecutable))
+    return undefined;
+  return { executable: executable as HostExecutable, args: tokens.slice(1) };
 }
